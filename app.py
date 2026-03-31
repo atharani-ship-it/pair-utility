@@ -94,7 +94,16 @@ def get_live():
 def get_historical(s, e):
     if st.session_state.demo_mode:
         time.sleep(1.2)
-        return {"prev_kwh":63710,"curr_kwh":97170,"usage_kwh":33460,"usage_rth":33460/RTH_FACTOR}
+        # Return correct readings based on the date range selected
+        sm = s.month; sy = s.year
+        if sy == 2025 and sm == 12:
+            return {"prev_kwh":20980,"curr_kwh":27630,"usage_kwh":6650,"usage_rth":6650/RTH_FACTOR}
+        elif sy == 2026 and sm == 1:
+            return {"prev_kwh":28410,"curr_kwh":62020,"usage_kwh":33610,"usage_rth":33610/RTH_FACTOR}
+        elif sy == 2026 and sm == 2:
+            return {"prev_kwh":63710,"curr_kwh":97170,"usage_kwh":33460,"usage_rth":33460/RTH_FACTOR}
+        else:
+            return {"prev_kwh":63710,"curr_kwh":97170,"usage_kwh":33460,"usage_rth":33460/RTH_FACTOR}
     token = get_token()
     if not token: return None
     url = (f"{API_BASE}/remoteData/getMeterData?dataType=2&meterType=1&meterNo={METER_NO}"
@@ -184,11 +193,16 @@ def gen_pdf(inv_no, period_label, inv_date, due_date, prev_kwh, curr_kwh, nums):
     c.setFillColor(colors.HexColor("#40916c")); c.setFillAlpha(0.18)
     c.circle(PW-1.5*cm, PH-0.4*cm, 2.2*cm, stroke=0, fill=1); c.setFillAlpha(1)
 
-    logo = os.path.join(os.path.dirname(__file__),"pair_logo.png")
+    logo = os.path.join(os.path.dirname(__file__), "pair_logo.png")
     if os.path.exists(logo):
-        try: c.drawImage(logo,LM,PH-hh+0.5*cm,width=2.6*cm,height=1.4*cm,preserveAspectRatio=True,mask="auto")
-        except: t("PAIR",LM,PH-1.35*cm,"Helvetica-Bold",28,WHITE)
-    else: t("PAIR",LM,PH-1.35*cm,"Helvetica-Bold",28,WHITE)
+        try:
+            c.drawImage(logo, LM, PH-hh+0.5*cm,
+                       width=2.6*cm, height=1.4*cm,
+                       preserveAspectRatio=True, mask="auto")
+        except:
+            t("PAIR", LM, PH-1.35*cm, "Helvetica-Bold", 28, WHITE)
+    else:
+        t("PAIR", LM, PH-1.35*cm, "Helvetica-Bold", 28, WHITE)
 
     t("GENERAL CONTRACTING LLC",LM,PH-2.05*cm,size=7.5,col=colors.HexColor("#ffffff88"))
     for i,ln in enumerate(["Office 6, Building 94, Musaffah Industrial Area 10, Abu Dhabi, UAE",
@@ -313,12 +327,15 @@ def gen_pdf(inv_no, period_label, inv_date, due_date, prev_kwh, curr_kwh, nums):
 # SIDEBAR
 # ═══════════════════════════════════════════════════════════════
 with st.sidebar:
-    from PIL import Image as _SPIL
     import os as _os
     _logo_path = _os.path.join(_os.path.dirname(__file__), "pair_logo.png")
     if _os.path.exists(_logo_path):
-        _simg = _SPIL.open(_logo_path)
-        st.image(_simg, width=140)
+        try:
+            from PIL import Image as _SPIL
+            _simg = _SPIL.open(_logo_path)
+            st.image(_simg, use_container_width=True)
+        except:
+            st.markdown("### ⚡ PAIR Utility")
     else:
         st.markdown("### ⚡ PAIR Utility")
     st.markdown("---")
@@ -340,7 +357,7 @@ with st.sidebar:
 st.markdown("""
 <div style="background:linear-gradient(135deg,#1a3d2b,#2d6a4f);color:white;
 padding:20px 24px;border-radius:10px;margin-bottom:20px;">
-<h2 style="color:white;margin:0;font-size:22px;">PAIR Utility Platform</h2>
+<h2 style="color:white;margin:0;font-size:22px;">⚡ PAIR Utility Platform</h2>
 <p style="color:#d8f3dc;margin:4px 0 0 0;font-size:14px;">
 Abu Dhabi Gate City  |  Meter 0025091007  |  Tenant: Takhniyat LLC</p>
 </div>""", unsafe_allow_html=True)
@@ -395,7 +412,15 @@ with tab2:
             prev_kwh=h["prev_kwh"]; curr_kwh=h["curr_kwh"]
             usage_kwh=h["usage_kwh"]; usage_rth=h["usage_rth"]
             inv_no=ino; period_label=f"{sd.strftime('%d %b %Y')} – {ed.strftime('%d %b %Y')}"
-            inv_date=ed.strftime("%d %b %Y"); due_date=(ed+timedelta(days=30)).strftime("%d %b %Y")
+            inv_date=ed.strftime("%d %b %Y")
+            # Due date = last day of following month
+            if ed.month == 12:
+                due = ed.replace(year=ed.year+1, month=1, day=28)
+            else:
+                import calendar
+                last_day = calendar.monthrange(ed.year, ed.month+1)[1]
+                due = ed.replace(month=ed.month+1, day=last_day)
+            due_date = due.strftime("%d %b %Y")
 
         nums = calc(usage_rth)
         st.success("✅ Invoice calculated")
