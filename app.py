@@ -25,7 +25,7 @@ SERVICE_FEE   = 85.00
 VAT_PCT       = 0.05
 GREEN_MID     = "#2d6a4f"
 
-st.set_page_config(page_title="PAIR Utility Platform", page_icon="⚡", layout="wide")
+st.set_page_config(page_title="PAIR Utility Platform", page_icon="⚡", layout="centered")
 
 st.markdown("""
 <style>
