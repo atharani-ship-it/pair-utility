@@ -35,6 +35,7 @@ section[data-testid="stSidebar"] *{color:white!important}
 div[data-testid="metric-container"]{background:white;border:1px solid #e5e7eb;border-radius:8px;padding:16px}
 .stTabs [data-baseweb="tab-list"]{background:white;border-radius:8px;padding:4px;border:1px solid #e5e7eb}
 .stTabs [aria-selected="true"]{background-color:#2d6a4f!important;color:white!important}
+button[role="tab"][aria-selected="true"]{background:#2d6a4f!important;color:white!important}
 .stButton>button{background:#2d6a4f;color:white;border:none;border-radius:6px;font-weight:600}
 .stButton>button:hover{background:#1a3d2b;color:white}
 .pair-card{background:white;border-radius:10px;padding:20px;border:1px solid #e5e7eb;margin:8px 0}
