@@ -388,10 +388,20 @@ with tab2:
     st.markdown("### Generate Monthly Invoice")
     st.markdown("**Quick Select — Confirmed Billing Periods:**")
     q1,q2,q3 = st.columns(3)
-    preset = None
-    if q1.button("CW-0001  |  Dec 2025"): preset=("CW-0001","25 Dec 2025 – 31 Dec 2025","31 Dec 2025","30 Jan 2026",20980,27630)
-    if q2.button("CW-0002  |  Jan 2026"): preset=("CW-0002","01 Jan 2026 – 31 Jan 2026","31 Jan 2026","28 Feb 2026",28410,62020)
-    if q3.button("CW-0003  |  Feb 2026"): preset=("CW-0003","01 Feb 2026 – 28 Feb 2026","28 Feb 2026","30 Mar 2026",63710,97170)
+
+    if "preset" not in st.session_state:
+        st.session_state.preset = None
+
+    if q1.button("CW-0001  |  Dec 2025"):
+        st.session_state.preset = ("CW-0001","25 Dec 2025 – 31 Dec 2025","31 Dec 2025","30 Jan 2026",20980,27630)
+    if q2.button("CW-0002  |  Jan 2026"):
+        st.session_state.preset = ("CW-0002","01 Jan 2026 – 31 Jan 2026","31 Jan 2026","28 Feb 2026",28410,62020)
+    if q3.button("CW-0003  |  Feb 2026"):
+        st.session_state.preset = ("CW-0003","01 Feb 2026 – 28 Feb 2026","28 Feb 2026","30 Mar 2026",63710,97170)
+
+    if st.session_state.preset:
+        p = st.session_state.preset
+        st.info(f"✅ Selected: **{p[0]}** — {p[1]}  |  Grand Total will be calculated on generate")
 
     st.markdown("---")
     st.markdown("**Or enter custom period:**")
@@ -401,8 +411,8 @@ with tab2:
     ino = st.text_input("Invoice Number", "CW-0004")
 
     if st.button("⚡  Generate Invoice", use_container_width=True):
-        if preset:
-            inv_no,period_label,inv_date,due_date,prev_kwh,curr_kwh = preset
+        if st.session_state.preset:
+            inv_no,period_label,inv_date,due_date,prev_kwh,curr_kwh = st.session_state.preset
             usage_kwh = curr_kwh-prev_kwh; usage_rth = usage_kwh/RTH_FACTOR
         else:
             with st.spinner("Pulling readings from API..."):
