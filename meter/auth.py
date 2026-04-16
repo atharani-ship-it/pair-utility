@@ -85,3 +85,42 @@ def get_access_token() -> str:
     _token = token
     _token_expiry = now + expires_in
     return _token
+
+
+if __name__ == "__main__":
+    import sys
+    sys.path.insert(0, __import__("os").path.dirname(__import__("os").path.dirname(__file__)))
+
+    url = (
+        f"{API_BASE_URL}/oauth/token"
+        f"?client_id={API_CLIENT_ID}"
+        f"&client_secret={API_CLIENT_SECRET}"
+    )
+    headers = {
+        "content-Type": "application/json",
+        "charset": "UTF-8",
+        "client_id": API_CLIENT_ID,
+        "User-Agent": API_USER_AGENT,
+    }
+
+    print("=" * 60)
+    print("PAIR METER API — AUTH DIAGNOSTIC")
+    print("=" * 60)
+    print(f"\nURL:\n  {url}\n")
+    print("Headers sent:")
+    for k, v in headers.items():
+        print(f"  {k}: {v}")
+    print()
+
+    try:
+        response = requests.post(url, headers=headers, timeout=API_TIMEOUT)
+        print(f"HTTP Status : {response.status_code} {response.reason}")
+        print(f"\nRaw response (first 500 chars):\n{response.text[:500]}")
+    except requests.exceptions.ConnectionError as exc:
+        print(f"CONNECTION ERROR: {exc}")
+    except requests.exceptions.Timeout:
+        print(f"TIMEOUT: No response within {API_TIMEOUT}s")
+    except requests.RequestException as exc:
+        print(f"REQUEST ERROR: {exc}")
+
+    print("\n" + "=" * 60)

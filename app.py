@@ -13,6 +13,8 @@ from reportlab.pdfgen import canvas as pdfcanvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
 from reportlab.lib import colors
+from ingestion.service import ingest_latest_reading
+from database import SessionLocal
 
 # ── CONFIG ────────────────────────────────────────────────────
 API_BASE      = "http://122.224.159.102:5305"
@@ -27,24 +29,76 @@ GREEN_MID     = "#2d6a4f"
 
 st.set_page_config(page_title="PAIR Utility Platform", page_icon="⚡", layout="wide")
 
+# ── CSS ───────────────────────────────────────────────────────
 st.markdown("""
 <style>
-.stApp{background:#f8fafb}
-section[data-testid="stSidebar"]{background:#1a3d2b!important}
-section[data-testid="stSidebar"] *{color:white!important}
-div[data-testid="metric-container"]{background:white;border:1px solid #e5e7eb;border-radius:8px;padding:16px}
-.stTabs [data-baseweb="tab-list"]{background:white;border-radius:8px;padding:4px;border:1px solid #e5e7eb}
-.stTabs [aria-selected="true"]{background-color:#2d6a4f!important;color:white!important}
-.stButton>button{background:#2d6a4f;color:white;border:none;border-radius:6px;font-weight:600}
-.stButton>button:hover{background:#1a3d2b;color:white}
-.pair-card{background:white;border-radius:10px;padding:20px;border:1px solid #e5e7eb;margin:8px 0}
+.stApp { background: #f4f6f8; }
+section[data-testid="stSidebar"] { background: #1a3d2b !important; }
+section[data-testid="stSidebar"] * { color: white !important; }
+
+/* Metric cards — tighter, no excess breathing room */
+div[data-testid="metric-container"] {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 10px 14px;
+}
+div[data-testid="stMetricLabel"] { font-size: 11px !important; margin-bottom: 2px; }
+div[data-testid="stMetricValue"] { font-family: monospace; font-size: 1.4rem !important; line-height: 1.2; }
+div[data-testid="stMetricDelta"] { font-size: 11px !important; }
+
+/* Tab strip */
+.stTabs [data-baseweb="tab-list"] {
+    background: white;
+    border-radius: 6px;
+    padding: 4px;
+    border: 1px solid #e5e7eb;
+    margin-bottom: 0;
+}
+.stTabs [aria-selected="true"] { background-color: #2d6a4f !important; color: white !important; }
+/* Tighten the space between tab strip and tab content */
+.stTabs [data-baseweb="tab-panel"] { padding-top: 14px; }
+button[data-baseweb="tab"] { font-weight: 600; }
+
+/* Buttons */
+.stButton > button {
+    background: #2d6a4f;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    padding: 0.45rem 1rem;
+}
+.stButton > button:hover { background: #1a3d2b; color: white; }
+
+/* Inline charge summary card */
+.pair-card {
+    background: white;
+    border-radius: 8px;
+    padding: 14px 18px;
+    border: 1px solid #e5e7eb;
+    margin: 8px 0;
+}
+
+/* Section label used in sidebar and tab sections */
+.section-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    display: block;
+    margin: 0 0 6px 0;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # ── SESSION STATE ─────────────────────────────────────────────
-if "token"        not in st.session_state: st.session_state.token        = None
-if "token_expiry" not in st.session_state: st.session_state.token_expiry = 0
-if "demo_mode"    not in st.session_state: st.session_state.demo_mode    = False
+if "token"         not in st.session_state: st.session_state.token         = None
+if "token_expiry"  not in st.session_state: st.session_state.token_expiry  = 0
+if "demo_mode"     not in st.session_state: st.session_state.demo_mode     = False
+if "valve_confirm" not in st.session_state: st.session_state.valve_confirm = False
+if "last_reading"  not in st.session_state: st.session_state.last_reading  = None
 
 # ── API ───────────────────────────────────────────────────────
 def get_token():
@@ -323,8 +377,9 @@ def gen_pdf(inv_no, period_label, inv_date, due_date, prev_kwh, curr_kwh, nums):
     c.save(); buf.seek(0)
     return buf
 
+
 # ═══════════════════════════════════════════════════════════════
-# SIDEBAR
+# SIDEBAR — CONTROL PANEL
 # ═══════════════════════════════════════════════════════════════
 with st.sidebar:
     import os as _os
@@ -335,85 +390,210 @@ with st.sidebar:
             _simg = _SPIL.open(_logo_path)
             st.image(_simg, use_container_width=True)
         except:
-            st.markdown("### ⚡ PAIR Utility")
+            st.markdown("### PAIR Utility Platform")
     else:
-        st.markdown("### ⚡ PAIR Utility")
-    st.markdown("---")
-    st.markdown("**Meter:** `0025091007`")
-    st.markdown("**Site:** Abu Dhabi Gate City")
-    st.markdown("**Tenant:** Takhniyat LLC")
-    st.markdown("---")
-    demo = st.toggle("Demo Mode", value=st.session_state.demo_mode)
-    st.session_state.demo_mode = demo
-    if demo: st.warning("Demo mode — simulated data")
-    else:    st.success("Live API mode")
-    st.markdown("---")
-    st.markdown("**Rate:** AED 0.95 / RTh")
-    st.markdown("**Service Fee:** AED 85.00 / month")
-    st.markdown("**VAT:** 5%")
-    st.markdown("**Conversion:** kWh ÷ 3.51685 = RTh")
+        st.markdown("### PAIR Utility Platform")
 
-# HEADER
-st.markdown("""
-<div style="background:linear-gradient(135deg,#1a3d2b,#2d6a4f);color:white;
-padding:20px 24px;border-radius:10px;margin-bottom:20px;">
-<h2 style="color:white;margin:0;font-size:22px;">⚡ PAIR Utility Platform</h2>
-<p style="color:#d8f3dc;margin:4px 0 0 0;font-size:14px;">
-Abu Dhabi Gate City  |  Meter 0025091007  |  Tenant: Takhniyat LLC</p>
+    st.divider()
+
+    # ── Site ──────────────────────────────────────────────────────
+    st.markdown('<p class="section-label">Site</p>', unsafe_allow_html=True)
+    st.markdown(f"""
+<div style="font-size:13px;line-height:1.9;">
+  <div style="font-weight:700;font-size:14px;margin-bottom:4px;">Abu Dhabi Gate City</div>
+  <div style="display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,0.1);padding-top:4px;">
+    <span style="opacity:0.6;">Meter</span><span style="font-weight:600;">{METER_NO}</span>
+  </div>
+  <div style="display:flex;justify-content:space-between;">
+    <span style="opacity:0.6;">Tenant</span><span style="font-weight:600;">Takhniyat LLC</span>
+  </div>
 </div>""", unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["📡  Live Meter","🧾  Generate Invoice","🔧  Valve Control"])
+    st.divider()
 
-# TAB 1
+    # ── Mode ──────────────────────────────────────────────────────
+    st.markdown('<p class="section-label">Mode</p>', unsafe_allow_html=True)
+    demo = st.toggle("Simulation Mode", value=st.session_state.demo_mode)
+    st.session_state.demo_mode = demo
+    if demo:
+        st.warning("Simulated data active", icon="⚠️")
+    else:
+        st.success("Connected to live API", icon="🟢")
+
+    st.divider()
+
+    # ── Billing Configuration ─────────────────────────────────────
+    st.markdown('<p class="section-label">Billing Configuration</p>', unsafe_allow_html=True)
+    st.markdown(f"""
+<div style="font-size:12px;line-height:2.1;">
+  <div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.1);">
+    <span style="opacity:0.6;">Rate</span><span style="font-weight:600;">AED {RATE_PER_RTH:.2f} / RTh</span>
+  </div>
+  <div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.1);">
+    <span style="opacity:0.6;">Service Fee</span><span style="font-weight:600;">AED {SERVICE_FEE:.2f} / mo</span>
+  </div>
+  <div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.1);">
+    <span style="opacity:0.6;">VAT</span><span style="font-weight:600;">{int(VAT_PCT * 100)}%</span>
+  </div>
+  <div style="display:flex;justify-content:space-between;">
+    <span style="opacity:0.6;">Conversion</span><span style="font-weight:600;">÷ {RTH_FACTOR} RTh</span>
+  </div>
+</div>""", unsafe_allow_html=True)
+
+    st.divider()
+
+    # ── System Status ─────────────────────────────────────────────
+    st.markdown('<p class="section-label">System Status</p>', unsafe_allow_html=True)
+    st.markdown("""
+<div style="font-size:12px;line-height:2.1;">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block;flex-shrink:0;"></span>
+    <span style="opacity:0.7;">Database</span><span style="margin-left:auto;font-weight:600;opacity:0.9;">Not connected</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block;flex-shrink:0;"></span>
+    <span style="opacity:0.7;">API</span><span style="margin-left:auto;font-weight:600;opacity:0.9;">Awaiting whitelist</span>
+  </div>
+</div>""", unsafe_allow_html=True)
+
+
+# ═══════════════════════════════════════════════════════════════
+# HEADER
+# ═══════════════════════════════════════════════════════════════
+hdr_left, hdr_right = st.columns([3, 1])
+with hdr_left:
+    st.markdown("""
+    <div style="background:linear-gradient(135deg,#1a3d2b,#2d6a4f);color:white;
+    padding:16px 20px;border-radius:8px;">
+    <h2 style="color:white;margin:0;font-size:20px;font-weight:700;">PAIR Utility Platform</h2>
+    <p style="color:#d8f3dc;margin:4px 0 0 0;font-size:13px;">
+    Abu Dhabi Gate City &nbsp;&middot;&nbsp; Meter 0025091007 &nbsp;&middot;&nbsp; Takhniyat LLC</p>
+    </div>""", unsafe_allow_html=True)
+with hdr_right:
+    st.markdown(f"""
+    <div style="background:white;border:1px solid #e5e7eb;border-radius:8px;
+    padding:16px 20px;text-align:right;">
+    <div style="font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase;
+    letter-spacing:0.05em;">As of</div>
+    <div style="font-size:14px;color:#111827;font-weight:600;margin-top:4px;">
+    {datetime.now().strftime("%d %b %Y  %H:%M")}</div>
+    </div>""", unsafe_allow_html=True)
+
+# Demo mode banner
+if st.session_state.demo_mode:
+    st.info("System running in Simulation Mode — data shown is not from live hardware.", icon="ℹ️")
+
+
+# ═══════════════════════════════════════════════════════════════
+# TABS
+# ═══════════════════════════════════════════════════════════════
+tab1, tab2, tab3 = st.tabs(["📡  Live Meter", "🧾  Generate Invoice", "🔧  Valve Control"])
+
+
+# ── TAB 1: LIVE METER ─────────────────────────────────────────
 with tab1:
-    st.markdown("### Live Meter Reading")
-    st.caption("Real-time data from BTU meter hardware via supplier API.")
-    if st.button("🔄  Ping Meter Now"):
-        with st.spinner("Connecting to meter..."):
-            r = get_live()
-        if r:
-            vlbl = {0:"CLOSED",1:"OPEN",2:"FORCE CLOSED",3:"FORCE OPEN",4:"UNLOCKED"}
-            vok  = r["valve"] in [1,3,4]
-            st.success("✅ Meter ONLINE")
-            c1,c2,c3,c4 = st.columns(4)
-            c1.metric("Cumulative Reading", f"{r['kwh']:,.2f} kWh")
-            c2.metric("Equivalent RTh",     f"{r['rth']:,.2f} RTh")
-            c3.metric("Valve Status",       vlbl.get(r["valve"],"UNKNOWN"))
-            c4.metric("Last Read",          r["read_time"])
-        else:
-            st.error("❌ Cannot reach meter. Enable Demo Mode or check network.")
 
-# TAB 2
+    # Section A — Identity + valve badge
+    a_left, a_right = st.columns([3, 1])
+    with a_left:
+        st.markdown("#### Live Meter Reading")
+        st.caption(f"Meter `{METER_NO}` · Abu Dhabi Gate City · Real-time data via supplier API")
+    with a_right:
+        if st.session_state.last_reading:
+            vlbl_badge = {0:"🔴 CLOSED", 1:"🟢 OPEN", 2:"🔴 FORCE CLOSED",
+                          3:"🟢 FORCE OPEN", 4:"🟢 UNLOCKED"}
+            v = st.session_state.last_reading.get("valve", 1)
+            st.markdown(
+                f'<div style="text-align:right;padding-top:10px;font-size:13px;'
+                f'font-weight:600;color:#374151;">{vlbl_badge.get(v, "UNKNOWN")}</div>',
+                unsafe_allow_html=True)
+
+    # Section B — Persistent metrics (shown once a reading is in session)
+    if st.session_state.last_reading:
+        r = st.session_state.last_reading
+        c1, c2, c3, c4 = st.columns(4)
+        vlbl_short = {0:"CLOSED", 1:"OPEN", 2:"FORCE CLOSED", 3:"FORCE OPEN", 4:"UNLOCKED"}
+        c1.metric("Cumulative Reading", f"{r['kwh']:,.2f}", "kWh")
+        c2.metric("Equivalent Cooling", f"{r['rth']:,.2f}", "RTh")
+        c3.metric("Valve Status",       vlbl_short.get(r["valve"], "UNKNOWN"))
+        c4.metric("Last Read",          r["read_time"])
+
+    # Section C — Actions
+    st.divider()
+    act_left, act_right = st.columns(2)
+
+    with act_left:
+        if st.button("🔄  Ping Meter Now", use_container_width=True):
+            with st.status("Connecting to meter...", expanded=True) as status:
+                st.write("Authenticating with API...")
+                r = get_live()
+                if r:
+                    st.write("Reading received.")
+                    st.session_state.last_reading = r
+                    status.update(label="Meter online — reading received.", state="complete", expanded=False)
+                else:
+                    status.update(label="Could not reach meter.", state="error", expanded=False)
+                    st.error("Enable Simulation Mode or check network / API whitelist.")
+
+    with act_right:
+        if st.button("⚡  Fetch & Store Reading", use_container_width=True):
+            with st.status("Ingesting reading...", expanded=True) as status:
+                try:
+                    st.write("Opening database session...")
+                    db = SessionLocal()
+                    st.write("Calling ingestion service...")
+                    result = ingest_latest_reading(db, "dd7fd316-9841-44ce-8064-0f020d6e8b87")
+                    if result["status"] == "inserted":
+                        status.update(label=f"Stored — {result['read_at']}", state="complete", expanded=False)
+                    else:
+                        status.update(label=f"Duplicate — already stored at {result['read_at']}", state="complete", expanded=False)
+                        st.warning("Reading already exists in database for this timestamp.")
+                except Exception as e:
+                    status.update(label="Ingestion failed.", state="error", expanded=False)
+                    st.error(f"Error: {e}")
+                finally:
+                    db.close()
+
+
+# ── TAB 2: GENERATE INVOICE ───────────────────────────────────
 with tab2:
-    st.markdown("### Generate Monthly Invoice")
-    st.markdown("**Quick Select — Confirmed Billing Periods:**")
-    q1,q2,q3 = st.columns(3)
+    # Quick select
+    st.markdown('<p class="section-label">Quick Select — Confirmed Billing Periods</p>', unsafe_allow_html=True)
+    q1, q2, q3 = st.columns(3)
     preset = None
-    if q1.button("CW-0001  |  Dec 2025"): preset=("CW-0001","25 Dec 2025 – 31 Dec 2025","31 Dec 2025","30 Jan 2026",20980,27630)
-    if q2.button("CW-0002  |  Jan 2026"): preset=("CW-0002","01 Jan 2026 – 31 Jan 2026","31 Jan 2026","28 Feb 2026",28410,62020)
-    if q3.button("CW-0003  |  Feb 2026"): preset=("CW-0003","01 Feb 2026 – 28 Feb 2026","28 Feb 2026","30 Mar 2026",63710,97170)
+    if q1.button("CW-0001  ·  Dec 2025", use_container_width=True):
+        preset = ("CW-0001","25 Dec 2025 – 31 Dec 2025","31 Dec 2025","30 Jan 2026",20980,27630)
+    if q2.button("CW-0002  ·  Jan 2026", use_container_width=True):
+        preset = ("CW-0002","01 Jan 2026 – 31 Jan 2026","31 Jan 2026","28 Feb 2026",28410,62020)
+    if q3.button("CW-0003  ·  Feb 2026", use_container_width=True):
+        preset = ("CW-0003","01 Feb 2026 – 28 Feb 2026","28 Feb 2026","30 Mar 2026",63710,97170)
 
-    st.markdown("---")
-    st.markdown("**Or enter custom period:**")
-    cc1,cc2 = st.columns(2)
-    sd = cc1.date_input("Start Date", datetime(2026,3,1).date())
-    ed = cc2.date_input("End Date",   datetime(2026,3,31).date())
-    ino = st.text_input("Invoice Number", "CW-0004")
+    st.divider()
 
-    if st.button("⚡  Generate Invoice", use_container_width=True):
+    # Custom period
+    st.markdown('<p class="section-label">Custom Period</p>', unsafe_allow_html=True)
+    cc1, cc2, cc3 = st.columns([2, 2, 2])
+    sd  = cc1.date_input("Start Date", datetime(2026, 3, 1).date())
+    ed  = cc2.date_input("End Date",   datetime(2026, 3, 31).date())
+    ino = cc3.text_input("Invoice Number", "CW-0004")
+
+    st.write("")
+    if st.button("Generate Invoice", use_container_width=True):
         if preset:
-            inv_no,period_label,inv_date,due_date,prev_kwh,curr_kwh = preset
-            usage_kwh = curr_kwh-prev_kwh; usage_rth = usage_kwh/RTH_FACTOR
+            inv_no, period_label, inv_date, due_date, prev_kwh, curr_kwh = preset
+            usage_kwh = curr_kwh - prev_kwh
+            usage_rth = usage_kwh / RTH_FACTOR
         else:
             with st.spinner("Pulling readings from API..."):
                 h = get_historical(sd, ed)
             if not h:
-                st.error("No data. Enable Demo Mode or use Quick Select."); st.stop()
-            prev_kwh=h["prev_kwh"]; curr_kwh=h["curr_kwh"]
-            usage_kwh=h["usage_kwh"]; usage_rth=h["usage_rth"]
-            inv_no=ino; period_label=f"{sd.strftime('%d %b %Y')} – {ed.strftime('%d %b %Y')}"
-            inv_date=ed.strftime("%d %b %Y")
-            # Due date = last day of following month
+                st.error("No data. Enable Simulation Mode or use Quick Select.")
+                st.stop()
+            prev_kwh     = h["prev_kwh"];   curr_kwh  = h["curr_kwh"]
+            usage_kwh    = h["usage_kwh"];  usage_rth = h["usage_rth"]
+            inv_no       = ino
+            period_label = f"{sd.strftime('%d %b %Y')} – {ed.strftime('%d %b %Y')}"
+            inv_date     = ed.strftime("%d %b %Y")
             if ed.month == 12:
                 due = ed.replace(year=ed.year+1, month=1, day=28)
             else:
@@ -423,52 +603,73 @@ with tab2:
             due_date = due.strftime("%d %b %Y")
 
         nums = calc(usage_rth)
-        st.success("✅ Invoice calculated")
-        r1,r2,r3,r4 = st.columns(4)
-        r1.metric("Opening Read",  f"{prev_kwh:,.0f} kWh")
-        r2.metric("Closing Read",  f"{curr_kwh:,.0f} kWh")
-        r3.metric("Consumption",   f"{usage_rth:,.2f} RTh")
-        r4.metric("Grand Total",   f"AED {nums['grand']:,.2f}")
 
+        # Metrics preview
+        r1, r2, r3, r4 = st.columns(4)
+        r1.metric("Opening Read", f"{prev_kwh:,.0f}", "kWh")
+        r2.metric("Closing Read", f"{curr_kwh:,.0f}", "kWh")
+        r3.metric("Consumption",  f"{usage_rth:,.2f}", "RTh")
+        r4.metric("Grand Total",  f"AED {nums['grand']:,.2f}")
+
+        # Charges table
         st.markdown(f"""<div class="pair-card">
-        <table style="width:100%;font-size:14px;border-collapse:collapse;">
-        <tr><td style="color:#6b7280;padding:6px 0">Consumption Charge ({usage_rth:,.2f} RTh × AED 0.95)</td>
+        <table style="width:100%;font-size:13px;border-collapse:collapse;">
+        <tr><td style="color:#6b7280;padding:5px 0">Consumption Charge ({usage_rth:,.2f} RTh × AED 0.95)</td>
             <td align="right"><b>AED {nums['cons']:,.2f}</b></td></tr>
-        <tr><td style="color:#6b7280;padding:6px 0">Recurring Service Fee</td>
+        <tr><td style="color:#6b7280;padding:5px 0">Recurring Service Fee</td>
             <td align="right"><b>AED {SERVICE_FEE:.2f}</b></td></tr>
-        <tr><td style="color:#6b7280;padding:6px 0">Subtotal (Excl. VAT)</td>
+        <tr><td style="color:#6b7280;padding:5px 0">Subtotal (Excl. VAT)</td>
             <td align="right"><b>AED {nums['sub']:,.2f}</b></td></tr>
-        <tr><td style="color:#6b7280;padding:6px 0">VAT @ 5%</td>
+        <tr><td style="color:#6b7280;padding:5px 0">VAT @ 5%</td>
             <td align="right"><b>AED {nums['vat']:,.2f}</b></td></tr>
-        <tr style="border-top:2px solid #2d6a4f;"><td style="padding:8px 0">
-            <b style="color:#1a3d2b;font-size:16px;">GRAND TOTAL</b></td>
-            <td align="right"><b style="color:#1a3d2b;font-size:16px;">AED {nums['grand']:,.2f}</b></td></tr>
+        <tr style="border-top:2px solid #2d6a4f;">
+            <td style="padding:8px 0"><b style="color:#1a3d2b;font-size:15px;">GRAND TOTAL</b></td>
+            <td align="right"><b style="color:#1a3d2b;font-size:15px;">AED {nums['grand']:,.2f}</b></td>
+        </tr>
         </table></div>""", unsafe_allow_html=True)
 
         with st.spinner("Generating PDF..."):
-            pdf = gen_pdf(inv_no,period_label,inv_date,due_date,prev_kwh,curr_kwh,nums)
+            pdf = gen_pdf(inv_no, period_label, inv_date, due_date, prev_kwh, curr_kwh, nums)
         st.download_button(
-            label=f"📄  Download {inv_no}  —  AED {nums['grand']:,.2f}",
-            data=pdf, file_name=f"PAIR_{inv_no}_Takhniyat.pdf",
-            mime="application/pdf", use_container_width=True)
+            label=f"Download {inv_no}  —  AED {nums['grand']:,.2f}",
+            data=pdf,
+            file_name=f"PAIR_{inv_no}_Takhniyat.pdf",
+            mime="application/pdf",
+            use_container_width=True)
 
-# TAB 3
+
+# ── TAB 3: VALVE CONTROL ──────────────────────────────────────
 with tab3:
-    st.markdown("### Remote Valve Control")
-    st.caption("Control chilled water valve for meter 0025091007.")
-    st.warning("⚠️ This directly affects tenant cooling. Use with caution.")
-    vc1,vc2 = st.columns(2)
-    if vc1.button("🟢  OPEN — Restore Service", use_container_width=True):
+    st.markdown("#### Remote Valve Control")
+    st.caption(f"Meter `{METER_NO}` · Abu Dhabi Gate City")
+
+    st.warning(
+        "Valve control directly affects the tenant's chilled water supply. "
+        "Changes take effect immediately.",
+        icon="⚠️")
+
+    # Confirmation toggle — sits directly above the action buttons
+    confirm = st.toggle(
+        "I confirm I want to send a valve command",
+        value=st.session_state.valve_confirm)
+    st.session_state.valve_confirm = confirm
+
+    st.write("")
+    vc1, vc2 = st.columns(2)
+    if vc1.button("🟢  OPEN — Restore Service", use_container_width=True, disabled=not confirm):
         if st.session_state.demo_mode:
             st.success("Demo: Valve OPEN command sent.")
         else:
-            with st.spinner("Sending command..."): ok = set_valve(1)
-            if ok: st.success("✅ Valve OPEN. Cooling restored.")
-            else:  st.error("❌ Command failed.")
-    if vc2.button("🔴  CLOSE — Suspend Service", use_container_width=True):
+            with st.spinner("Sending command..."):
+                ok = set_valve(1)
+            if ok: st.success("Valve OPEN. Cooling restored.")
+            else:  st.error("Command failed.")
+
+    if vc2.button("🔴  CLOSE — Suspend Service", use_container_width=True, disabled=not confirm):
         if st.session_state.demo_mode:
             st.warning("Demo: Valve CLOSE command sent.")
         else:
-            with st.spinner("Sending command..."): ok = set_valve(0)
-            if ok: st.warning("⚠️ Valve CLOSED. Service suspended.")
-            else:  st.error("❌ Command failed.")
+            with st.spinner("Sending command..."):
+                ok = set_valve(0)
+            if ok: st.warning("Valve CLOSED. Service suspended.")
+            else:  st.error("Command failed.")

@@ -4,3 +4,5 @@ reportlab
 matplotlib
 qrcode
 pillow
+sqlalchemy
+psycopg2-binary

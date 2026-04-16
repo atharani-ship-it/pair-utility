@@ -1,24 +1,12 @@
-# meter/client.py
-#
-# All data operations against the BTU meter API.
-# Every request requires a valid access token from meter.auth.get_access_token().
-#
-# Endpoints used:
-#   POST {API_BASE_URL}/remoteData/getMeterData   dataType=1 → latest reading
-#                                                  dataType=2 → historical readings
-#   POST {API_BASE_URL}/remoteData/setValveState  → open / close valve
-#
-# API response shape for meter data: [{"code": 0, "data": [{...}, ...]}]
-# API response shape for valve:      {"code": 0, "cmdState": 0}
-
-# Note: these imports assume the project is executed from the repository root.
 from __future__ import annotations
 
+import random
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
 
 import requests
+import streamlit as st
 
 from constants import (
     API_BASE_URL,
@@ -99,13 +87,13 @@ def _parse_reading_item(item: dict) -> dict:
     read_kwh = Decimal(item["currentReading"])
 
     raw_signal = item.get("signalStrength")
-    raw_valve  = item.get("valveState")
+    raw_valve = item.get("valveState")
 
     return {
-        "read_at":         read_at,
-        "read_kwh":        read_kwh,
+        "read_at": read_at,
+        "read_kwh": read_kwh,
         "signal_strength": int(raw_signal) if raw_signal is not None else None,
-        "valve_state":     str(raw_valve)  if raw_valve  is not None else None,
+        "valve_state": str(raw_valve) if raw_valve is not None else None,
     }
 
 
@@ -116,8 +104,19 @@ def get_latest_reading() -> dict:
     Fetch the latest meter reading from the API.
 
     Returns:
-        Returns parsed latest-reading payload or None.
+        Returns parsed latest-reading payload.
     """
+    if st.session_state.get("demo_mode", False):
+        now = datetime.now(timezone.utc)
+        read_kwh = Decimal(str(97170 + random.uniform(0, 80)))
+        return {
+            "meter_number": API_METER_NO,
+            "read_at": now,
+            "read_kwh": read_kwh,
+            "signal_strength": 100,
+            "valve_state": "1",
+        }
+
     token = get_access_token()
     url = (
         f"{API_BASE_URL}/remoteData/getMeterData"
@@ -145,11 +144,11 @@ def get_historical_readings(start_time: datetime, end_time: datetime) -> list[di
         end_time:   End of the billing period   (endTime   set to 23:59:59).
 
     Returns:
-        Returns parsed historical-reading payload or None.
+        Returns parsed historical-reading payload.
     """
     token = get_access_token()
     begin = start_time.strftime("%Y-%m-%d 00:00:00")
-    end   = end_time.strftime("%Y-%m-%d 23:59:59")
+    end = end_time.strftime("%Y-%m-%d 23:59:59")
     url = (
         f"{API_BASE_URL}/remoteData/getMeterData"
         f"?dataType=2&meterType=1&meterNo={API_METER_NO}"
