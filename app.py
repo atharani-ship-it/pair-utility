@@ -47,18 +47,32 @@ div[data-testid="stMetricLabel"] { font-size: 11px !important; margin-bottom: 2p
 div[data-testid="stMetricValue"] { font-family: monospace; font-size: 1.4rem !important; line-height: 1.2; }
 div[data-testid="stMetricDelta"] { font-size: 11px !important; }
 
-/* Tab strip */
+/* Tab strip — desktop base */
 .stTabs [data-baseweb="tab-list"] {
     background: white;
     border-radius: 6px;
     padding: 4px;
     border: 1px solid #e5e7eb;
     margin-bottom: 0;
+    gap: 2px;
 }
-.stTabs [aria-selected="true"] { background-color: #2d6a4f !important; color: white !important; }
+/* Inactive tab: explicit dark text so it is readable on the white strip */
+button[data-baseweb="tab"] {
+    font-weight: 600;
+    color: #374151 !important;
+    background: transparent;
+    border-radius: 4px;
+}
+/* Every child element inside an inactive tab (covers icon spans) */
+button[data-baseweb="tab"] * { color: #374151 !important; }
+/* Active tab: green pill, white text */
+.stTabs [aria-selected="true"] {
+    background-color: #2d6a4f !important;
+    color: white !important;
+}
+.stTabs [aria-selected="true"] * { color: white !important; }
 /* Tighten the space between tab strip and tab content */
 .stTabs [data-baseweb="tab-panel"] { padding-top: 14px; }
-button[data-baseweb="tab"] { font-weight: 600; }
 
 /* Buttons */
 .stButton > button {
@@ -89,6 +103,50 @@ button[data-baseweb="tab"] { font-weight: 600; }
     letter-spacing: 0.07em;
     display: block;
     margin: 0 0 6px 0;
+}
+
+/* ── Mobile overrides (≤ 640 px) ───────────────────────────── */
+@media (max-width: 640px) {
+
+    /* Tab strip: allow tabs to wrap and fill width on narrow screens */
+    .stTabs [data-baseweb="tab-list"] {
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 4px;
+    }
+
+    /* Each tab: shrink padding and font, stay readable */
+    button[data-baseweb="tab"] {
+        font-size: 12px !important;
+        padding: 6px 10px !important;
+        flex: 1 1 auto;
+        text-align: center;
+        /* Stronger contrast on mobile — tab background is white */
+        color: #1f2937 !important;
+        border: 1px solid #e5e7eb;
+    }
+    button[data-baseweb="tab"] * { color: #1f2937 !important; }
+
+    /* Active tab stays clearly selected */
+    .stTabs [aria-selected="true"] {
+        background-color: #2d6a4f !important;
+        color: white !important;
+        border-color: #2d6a4f !important;
+    }
+    .stTabs [aria-selected="true"] * { color: white !important; }
+
+    /* Metric cards: full-width stack on mobile */
+    div[data-testid="metric-container"] {
+        padding: 8px 10px;
+    }
+    div[data-testid="stMetricValue"] { font-size: 1.15rem !important; }
+    div[data-testid="stMetricLabel"] { font-size: 10px !important; }
+
+    /* Buttons: more tap-friendly height */
+    .stButton > button {
+        padding: 0.6rem 1rem !important;
+        font-size: 14px !important;
+    }
 }
 </style>
 """, unsafe_allow_html=True)
