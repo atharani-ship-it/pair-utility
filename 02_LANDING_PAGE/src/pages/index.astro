@@ -9,9 +9,1273 @@
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
+		<title>PAIR | Smart Cooling Metering & Billing</title>
+		<style>
+			/* variables/base */
+			:root {
+				--emerald: #022c22;
+				--emerald-2: #06382d;
+				--emerald-3: #0c4739;
+				--off-white: #f4f1e8;
+				--paper: #fffdf7;
+				--muted-gold: #f59e0b;
+				--gold-dark: #9a6408;
+				--ink: #09251f;
+				--line-dark: rgba(2, 44, 34, 0.18);
+				--line-light: rgba(244, 241, 232, 0.18);
+				--text-muted-dark: rgba(9, 37, 31, 0.72);
+				--text-muted-light: rgba(244, 241, 232, 0.74);
+				--mono:
+					"JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono",
+					monospace;
+				color: var(--ink);
+				background: var(--off-white);
+				font-family:
+					Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+					"Segoe UI", sans-serif;
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+
+			html {
+				scroll-behavior: smooth;
+			}
+
+			body {
+				margin: 0;
+				min-width: 320px;
+				background: var(--off-white);
+				color: var(--ink);
+			}
+
+			a {
+				color: inherit;
+			}
+
+			p,
+			h1,
+			h2,
+			h3 {
+				margin: 0;
+			}
+
+			/* layout */
+			.site-shell {
+				overflow: hidden;
+			}
+
+			.section {
+				position: relative;
+				padding: clamp(48px, 6vw, 64px) clamp(24px, 6vw, 72px);
+			}
+
+			.section.dark {
+				background:
+					linear-gradient(rgba(245, 158, 11, 0.05) 1px, transparent 1px),
+					linear-gradient(90deg, rgba(245, 158, 11, 0.05) 1px, transparent 1px),
+					var(--emerald);
+				background-size: 72px 72px;
+				color: var(--off-white);
+			}
+
+			.section.light {
+				background: var(--off-white);
+				color: var(--ink);
+			}
+
+			.section-inner {
+				position: relative;
+				width: min(1152px, 100%);
+				margin: 0 auto;
+			}
+
+			.section-grid {
+				display: grid;
+				grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
+				gap: clamp(32px, 4vw, 48px);
+				align-items: center;
+			}
+
+			.section-label {
+				margin-bottom: 8px;
+				color: var(--gold-dark);
+				font-family: var(--mono);
+				font-size: 12px;
+				font-weight: 800;
+				letter-spacing: 0.2em;
+				text-transform: uppercase;
+			}
+
+			.dark .section-label {
+				color: var(--muted-gold);
+			}
+
+			.section-title {
+				max-width: 760px;
+				font-size: clamp(1.75rem, 2.4vw, 2rem);
+				font-weight: 760;
+				line-height: 1;
+				letter-spacing: -0.01em;
+			}
+
+			.section-copy {
+				max-width: 680px;
+				margin-top: 16px;
+				color: var(--text-muted-dark);
+				font-size: clamp(0.96rem, 1.2vw, 1.06rem);
+				line-height: 1.7;
+			}
+
+			.dark .section-copy {
+				color: var(--text-muted-light);
+			}
+
+			/* hero */
+			.hero {
+				position: relative;
+				display: flex;
+				min-height: 100vh;
+				flex-direction: column;
+				justify-content: space-between;
+				padding: clamp(24px, 4vw, 40px);
+				background:
+					linear-gradient(rgba(245, 158, 11, 0.08) 1px, transparent 1px),
+					linear-gradient(90deg, rgba(245, 158, 11, 0.08) 1px, transparent 1px),
+					radial-gradient(circle at 78% 26%, rgba(245, 158, 11, 0.1), transparent 32%),
+					var(--emerald);
+				background-size: 64px 64px, 64px 64px, auto;
+				color: var(--off-white);
+			}
+
+			.hero::before {
+				position: absolute;
+				inset: clamp(14px, 2.5vw, 28px);
+				border: 1px solid var(--line-light);
+				content: "";
+				pointer-events: none;
+			}
+
+			.nav {
+				position: relative;
+				z-index: 1;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 24px;
+				border-bottom: 1px solid var(--line-light);
+				padding-bottom: 18px;
+			}
+
+			.brand {
+				display: inline-flex;
+				align-items: center;
+				gap: 12px;
+				font-weight: 800;
+				letter-spacing: 0.18em;
+				text-transform: uppercase;
+				font-family: var(--mono);
+			}
+
+			.brand-mark {
+				display: inline-grid;
+				width: 36px;
+				height: 36px;
+				place-items: center;
+				border: 1px solid rgba(245, 158, 11, 0.72);
+				color: var(--muted-gold);
+				font-size: 0.78rem;
+				letter-spacing: 0;
+			}
+
+			.nav-links {
+				display: flex;
+				flex-wrap: wrap;
+				gap: clamp(14px, 2vw, 28px);
+				color: rgba(244, 241, 232, 0.78);
+				font-family: var(--mono);
+				font-size: 0.78rem;
+				font-weight: 700;
+				letter-spacing: 0.1em;
+				text-transform: uppercase;
+			}
+
+			.nav-links a {
+				text-decoration: none;
+			}
+
+			.nav-links a:hover,
+			.nav-links a:focus-visible {
+				color: var(--muted-gold);
+				outline: none;
+			}
+
+			.hero-content {
+				position: relative;
+				z-index: 1;
+				max-width: 980px;
+				margin: clamp(48px, 7vw, 72px) 0 clamp(32px, 4vw, 48px);
+				border-left: 2px solid var(--muted-gold);
+				padding-left: clamp(20px, 4vw, 42px);
+			}
+
+			.eyebrow {
+				margin-bottom: 16px;
+				color: var(--muted-gold);
+				font-family: var(--mono);
+				font-size: 12px;
+				font-weight: 800;
+				letter-spacing: 0.2em;
+				text-transform: uppercase;
+			}
+
+			h1 {
+				max-width: 940px;
+				font-size: clamp(2.5rem, 4.2vw, 3.25rem);
+				font-weight: 780;
+				line-height: 0.98;
+				letter-spacing: 0;
+				text-wrap: balance;
+			}
+
+			.hero-copy {
+				max-width: 760px;
+				margin-top: 16px;
+				color: var(--text-muted-light);
+				font-size: clamp(0.98rem, 1.25vw, 1.1rem);
+				line-height: 1.65;
+			}
+
+			.cta {
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				min-height: 40px;
+				margin-top: 24px;
+				border: 1px solid var(--muted-gold);
+				padding: 0 16px;
+				background: transparent;
+				color: var(--off-white);
+				font-family: var(--mono);
+				font-size: 12px;
+				font-weight: 800;
+				letter-spacing: 0.09em;
+				text-decoration: none;
+				text-transform: uppercase;
+			}
+
+			.cta:hover,
+			.cta:focus-visible {
+				background: var(--muted-gold);
+				color: var(--emerald);
+				outline: none;
+			}
+
+			.status-strip {
+				position: relative;
+				z-index: 1;
+				display: grid;
+				grid-template-columns: repeat(4, minmax(0, 1fr));
+				border: 1px solid var(--line-light);
+				background: rgba(2, 44, 34, 0.72);
+			}
+
+			.status-strip span {
+				min-height: 48px;
+				border-right: 1px solid var(--line-light);
+				padding: 16px;
+				color: rgba(244, 241, 232, 0.86);
+				font-family: var(--mono);
+				font-size: 12px;
+				font-weight: 800;
+				letter-spacing: 0.14em;
+				text-transform: uppercase;
+			}
+
+			.status-strip span:last-child {
+				border-right: 0;
+				color: var(--muted-gold);
+			}
+
+			/* flow system */
+			.flow {
+				position: relative;
+			}
+
+			.flow::before {
+				position: absolute;
+				top: 0;
+				bottom: 0;
+				left: clamp(24px, 5vw, 72px);
+				width: 1px;
+				background: linear-gradient(
+					to bottom,
+					transparent,
+					rgba(245, 158, 11, 0.48),
+					rgba(2, 44, 34, 0.22),
+					transparent
+				);
+				content: "";
+			}
+
+			.riser-liquid {
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 1px;
+				height: 0%;
+				background-color: #f59e0b;
+				animation: riser-fill linear both;
+				animation-range: 0% 100%;
+				animation-timeline: scroll();
+			}
+
+			.riser-container {
+				position: absolute;
+				top: 0;
+				bottom: 0;
+				left: clamp(24px, 5vw, 72px);
+				z-index: 1;
+				width: 1px;
+				pointer-events: none;
+			}
+
+			@keyframes riser-fill {
+				from {
+					height: 0%;
+				}
+
+				to {
+					height: 100%;
+				}
+			}
+
+			.flow-node::before {
+				position: absolute;
+				top: clamp(74px, 10vw, 132px);
+				left: clamp(18px, 5vw, 66px);
+				z-index: 2;
+				width: 13px;
+				height: 13px;
+				border: 2px solid var(--muted-gold);
+				background: currentColor;
+				content: "";
+				animation:
+					mechanical-spin 60s linear infinite,
+					node-border-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+			}
+
+			@keyframes mechanical-spin {
+				to {
+					transform: rotate(360deg);
+				}
+			}
+
+			@keyframes node-border-pulse {
+				0%,
+				100% {
+					border-color: rgba(245, 158, 11, 0.56);
+					box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+				}
+
+				50% {
+					border-color: var(--muted-gold);
+					box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+				}
+			}
+
+			.light.flow-node::before {
+				color: var(--off-white);
+			}
+
+			.dark.flow-node::before {
+				color: var(--emerald);
+			}
+
+			/* sections */
+			.problem-grid,
+			.feature-grid,
+			.property-grid,
+			.proof-grid {
+				display: grid;
+				gap: 1px;
+				border: 1px solid var(--line-dark);
+				background: var(--line-dark);
+			}
+
+			.problem-grid {
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+				margin-top: 32px;
+			}
+
+			.solution-list {
+				display: grid;
+				gap: 0;
+				margin-top: 24px;
+				border-left: 1px solid var(--muted-gold);
+				padding: 0;
+				list-style: none;
+			}
+
+			.solution-list li {
+				position: relative;
+				display: flex;
+				min-height: 48px;
+				align-items: center;
+				border-bottom: 1px solid var(--line-dark);
+				padding: 8px 0 8px 24px;
+				color: var(--text-muted-dark);
+				font-size: 0.92rem;
+				font-weight: 700;
+				text-transform: uppercase;
+				letter-spacing: 0.06em;
+			}
+
+			.solution-list li::before {
+				position: absolute;
+				left: -5px;
+				width: 9px;
+				height: 9px;
+				border: 1px solid var(--muted-gold);
+				background: var(--off-white);
+				content: "";
+			}
+
+			.process-flow {
+				position: relative;
+				display: grid;
+				grid-template-columns: 1fr;
+				gap: 0;
+				max-width: 760px;
+				margin-top: 32px;
+			}
+
+			.process-flow::before {
+				position: absolute;
+				top: 0;
+				bottom: 0;
+				left: 31px;
+				width: 1px;
+				background: var(--muted-gold);
+				content: "";
+			}
+
+			.feature-grid {
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+				margin-top: 32px;
+			}
+
+			.property-grid {
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+				margin-top: 32px;
+			}
+
+			.proof-grid {
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+				margin-top: 24px;
+				border-color: var(--line-light);
+				background: var(--line-light);
+			}
+
+			.operating-note {
+				margin-top: 24px;
+				border-left: 1px solid var(--muted-gold);
+				padding-left: 16px;
+				color: var(--text-muted-dark);
+				font-size: 1rem;
+				line-height: 1.7;
+			}
+
+			/* cards/tables/panels */
+			.info-block,
+			.feature-card,
+			.property-card,
+			.proof-card {
+				background: var(--paper);
+				padding: 24px;
+			}
+
+			.info-block {
+				min-height: 160px;
+				border-top: 1px solid var(--emerald);
+			}
+
+			.info-block h3,
+			.feature-card h3,
+			.property-card h3,
+			.proof-card h3 {
+				color: var(--ink);
+				font-size: 1rem;
+				font-weight: 780;
+				letter-spacing: 0;
+			}
+
+			.info-block p,
+			.feature-card p,
+			.property-card p,
+			.proof-card p {
+				margin-top: 12px;
+				color: var(--text-muted-dark);
+				font-size: 0.94rem;
+				line-height: 1.62;
+			}
+
+			.dashboard-panel,
+			.platform-panel {
+				border: 1px solid var(--line-dark);
+				background: var(--paper);
+				animation: monitor-flicker 0.1s infinite;
+			}
+
+			@keyframes monitor-flicker {
+				0%,
+				100% {
+					opacity: 0.98;
+					transform: translateY(0);
+				}
+
+				50% {
+					opacity: 1;
+					transform: translateY(1px);
+				}
+			}
+
+			.panel-header {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				gap: 16px;
+				border-bottom: 1px solid var(--line-dark);
+				padding: 16px;
+				color: var(--ink);
+				font-family: var(--mono);
+				font-size: 12px;
+				font-weight: 800;
+				letter-spacing: 0.12em;
+				text-transform: uppercase;
+			}
+
+			.status-dot {
+				display: inline-block;
+				width: 9px;
+				height: 9px;
+				background: #16a34a;
+				box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.12);
+				animation: status-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+			}
+
+			.panel-body {
+				padding: 16px;
+			}
+
+			.data-row {
+				display: grid;
+				grid-template-columns: 1fr auto;
+				gap: 18px;
+				min-height: 48px;
+				align-items: center;
+				border-bottom: 1px solid var(--line-dark);
+				padding: 8px 0;
+				color: var(--text-muted-dark);
+				font-size: 0.92rem;
+			}
+
+			.data-row:first-child {
+				padding-top: 0;
+			}
+
+			.data-row:last-child {
+				border-bottom: 0;
+				padding-bottom: 0;
+			}
+
+			.data-row strong {
+				display: inline-flex;
+				align-items: center;
+				gap: 8px;
+				color: var(--ink);
+				font-family: var(--mono);
+				font-weight: 800;
+			}
+
+			.data-row strong::before {
+				width: 7px;
+				height: 7px;
+				background: #16a34a;
+				box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+				content: "";
+				animation: status-pulse 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+			}
+
+			@keyframes status-pulse {
+				0%,
+				100% {
+					opacity: 0.72;
+				}
+
+				50% {
+					opacity: 1;
+				}
+			}
+
+			.meter-grid {
+				display: grid;
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+				gap: 1px;
+				margin-top: 16px;
+				background: var(--line-dark);
+			}
+
+			.meter-cell {
+				min-height: 72px;
+				background: #f8f4e9;
+				padding: 14px;
+			}
+
+			.meter-cell span {
+				display: block;
+				color: var(--gold-dark);
+				font-family: var(--mono);
+				font-size: 0.68rem;
+				font-weight: 800;
+				letter-spacing: 0.12em;
+				text-transform: uppercase;
+			}
+
+			.meter-cell strong {
+				display: block;
+				margin-top: 8px;
+				color: var(--ink);
+				font-family: var(--mono);
+				font-size: 1.12rem;
+			}
+
+			.process-step {
+				position: relative;
+				display: grid;
+				grid-template-columns: 64px 1fr;
+				gap: 24px;
+				min-height: 112px;
+				padding: 0 0 24px;
+			}
+
+			.step-number {
+				position: relative;
+				z-index: 1;
+				display: grid;
+				width: 64px;
+				height: 64px;
+				place-items: center;
+				border: 1px solid var(--muted-gold);
+				background: var(--emerald);
+				color: var(--muted-gold);
+				font-family: var(--mono);
+				font-weight: 800;
+			}
+
+			.process-step h3 {
+				margin-top: 4px;
+				color: var(--off-white);
+				font-size: 1rem;
+			}
+
+			.process-step p {
+				margin-top: 12px;
+				color: var(--text-muted-light);
+				font-size: 0.94rem;
+				line-height: 1.62;
+			}
+
+			.feature-card,
+			.property-card {
+				min-height: 144px;
+				border-top: 1px solid transparent;
+			}
+
+			.feature-card:hover,
+			.property-card:hover {
+				border-top-color: var(--muted-gold);
+			}
+
+			.proof-caption {
+				margin-top: 16px;
+				color: rgba(244, 241, 232, 0.82);
+				font-size: 0.98rem;
+				line-height: 1.7;
+			}
+
+			.proof-card {
+				background: rgba(244, 241, 232, 0.96);
+			}
+
+			.proof-visual {
+				display: grid;
+				min-height: 96px;
+				margin-bottom: 16px;
+				place-items: center;
+				border: 1px solid var(--line-dark);
+				background:
+					linear-gradient(var(--line-dark) 1px, transparent 1px),
+					linear-gradient(90deg, var(--line-dark) 1px, transparent 1px),
+					#f8f4e9;
+				background-size: 22px 22px;
+				color: var(--gold-dark);
+				font-family: var(--mono);
+				font-size: 0.74rem;
+				font-weight: 800;
+				letter-spacing: 0.1em;
+				text-transform: uppercase;
+			}
+
+			.comparison-table {
+				border: 1px solid var(--line-dark);
+				background: var(--paper);
+			}
+
+			.comparison-row {
+				display: grid;
+				grid-template-columns: 0.8fr 1.2fr;
+				border-bottom: 1px solid var(--line-dark);
+			}
+
+			.comparison-row:last-child {
+				border-bottom: 0;
+			}
+
+			.comparison-head,
+			.comparison-cell {
+				padding: 16px;
+			}
+
+			.comparison-head {
+				border-right: 1px solid var(--line-dark);
+				color: var(--gold-dark);
+				font-family: var(--mono);
+				font-size: 0.76rem;
+				font-weight: 800;
+				letter-spacing: 0.12em;
+				text-transform: uppercase;
+			}
+
+			.comparison-cell ul {
+				display: grid;
+				gap: 10px;
+				margin: 0;
+				padding: 0;
+				color: var(--text-muted-dark);
+				list-style: none;
+				font-size: 0.98rem;
+				line-height: 1.5;
+			}
+
+			.footer-line {
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: space-between;
+				gap: 20px;
+				margin-top: 48px;
+				border-top: 1px solid var(--line-light);
+				padding-top: 16px;
+				color: rgba(244, 241, 232, 0.78);
+				font-family: var(--mono);
+				font-size: 0.82rem;
+				font-weight: 700;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+			}
+
+			/* responsive rules */
+			@media (max-width: 980px) {
+				.section-grid,
+				.feature-grid,
+				.proof-grid {
+					grid-template-columns: 1fr;
+				}
+
+				.problem-grid,
+				.property-grid {
+					grid-template-columns: 1fr;
+				}
+
+				.process-step p {
+					grid-column: 2;
+				}
+			}
+
+			@media (max-width: 760px) {
+				.hero {
+					padding: 22px;
+				}
+
+				.nav {
+					align-items: flex-start;
+					flex-direction: column;
+				}
+
+				.nav-links {
+					width: 100%;
+					justify-content: space-between;
+					gap: 12px;
+				}
+
+				.hero-content {
+					margin-top: 48px;
+				}
+
+				h1 {
+					font-size: clamp(2.25rem, 9vw, 3rem);
+				}
+
+				.status-strip {
+					grid-template-columns: 1fr 1fr;
+				}
+
+				.status-strip span:nth-child(2) {
+					border-right: 0;
+				}
+
+				.status-strip span:nth-child(-n + 2) {
+					border-bottom: 1px solid var(--line-light);
+				}
+
+				.flow::before,
+				.riser-container,
+				.flow-node::before {
+					display: none;
+				}
+
+				.comparison-row {
+					grid-template-columns: 1fr;
+				}
+
+				.comparison-head {
+					border-right: 0;
+					border-bottom: 1px solid var(--line-dark);
+				}
+
+				.meter-grid {
+					grid-template-columns: 1fr;
+				}
+			}
+
+			@media (max-width: 520px) {
+				.section {
+					padding: 48px 20px;
+				}
+
+				.status-strip,
+				.process-step {
+					grid-template-columns: 1fr;
+				}
+
+				.status-strip span {
+					border-right: 0;
+					border-bottom: 1px solid var(--line-light);
+				}
+
+				.status-strip span:last-child {
+					border-bottom: 0;
+				}
+
+				.process-step p {
+					grid-column: auto;
+				}
+			}
+		</style>
 	</head>
 	<body>
-		<h1>Astro</h1>
+		<main class="site-shell">
+			<section class="hero" aria-labelledby="hero-title">
+				<nav class="nav" aria-label="Primary navigation">
+					<div class="brand" aria-label="PAIR">
+						<span class="brand-mark">P</span>
+						<span>PAIR</span>
+					</div>
+					<div class="nav-links">
+						<a href="#services">Services</a>
+						<a href="#how-it-works">How It Works</a>
+						<a href="#platform">Platform</a>
+						<a href="#contact">Contact</a>
+					</div>
+				</nav>
+
+				<div class="hero-content">
+					<div class="eyebrow">Managed Chilled Water Utility Operations</div>
+					<h1 id="hero-title">
+						Smart Cooling Metering &amp; Billing for Commercial Properties
+					</h1>
+					<p class="hero-copy">
+						PAIR manages BTU metering, tenant-level billing, monitoring, and
+						reporting for commercial properties that require accurate cooling
+						utility recovery.
+					</p>
+					<a class="cta" href="#contact">Request a Project Assessment</a>
+				</div>
+
+				<div class="status-strip" aria-label="PAIR operational focus">
+					<span>BTU Metering</span>
+					<span>Tenant Billing</span>
+					<span>Remote Monitoring</span>
+					<span>Abu Dhabi</span>
+				</div>
+			</section>
+
+			<div class="flow">
+				<div class="riser-container" aria-hidden="true">
+					<div class="riser-liquid"></div>
+				</div>
+				<section class="section light flow-node" aria-labelledby="problem-title">
+					<div class="section-inner">
+						<div class="section-label">The Challenge</div>
+						<h2 id="problem-title" class="section-title">
+							The Hidden Cost of Unmetered Cooling
+						</h2>
+						<div class="problem-grid">
+							<article class="info-block">
+								<h3>Cost Absorption</h3>
+								<p>
+									Cooling costs are often absorbed by the property instead of
+									being accurately allocated to tenants.
+								</p>
+							</article>
+							<article class="info-block">
+								<h3>No Visibility</h3>
+								<p>
+									Property teams lack clear insight into actual chilled water
+									consumption at tenant level.
+								</p>
+							</article>
+							<article class="info-block">
+								<h3>Billing Disputes</h3>
+								<p>
+									Estimated or shared billing models lead to disputes, confusion,
+									and lack of transparency.
+								</p>
+							</article>
+						</div>
+					</div>
+				</section>
+
+				<section class="section light flow-node" aria-labelledby="solution-title">
+					<div class="section-inner section-grid">
+						<div>
+							<div class="section-label">The Solution</div>
+							<h2 id="solution-title" class="section-title">
+								Metered. Billed. Managed.
+							</h2>
+							<p class="section-copy">
+								PAIR provides a managed metering and billing layer for commercial
+								properties, structured for accurate usage allocation and clear
+								monthly reporting.
+							</p>
+							<ul class="solution-list" aria-label="PAIR managed layer">
+								<li>Physical metering</li>
+								<li>Data collection</li>
+								<li>Monitoring</li>
+								<li>Monthly tenant billing</li>
+								<li>Reporting for property management</li>
+							</ul>
+						</div>
+
+						<aside class="dashboard-panel" aria-label="PAIR utility platform panel">
+							<div class="panel-header">
+								<span>PAIR Utility Platform - Live Operational System</span>
+								<span class="status-dot" aria-hidden="true"></span>
+							</div>
+							<div class="panel-body">
+								<div class="data-row">
+									<span>Tenant Meter Network</span>
+									<strong>Active</strong>
+								</div>
+								<div class="data-row">
+									<span>Flow / Temperature Monitoring</span>
+									<strong>Online</strong>
+								</div>
+								<div class="data-row">
+									<span>Monthly Billing Cycle</span>
+									<strong>Ready</strong>
+								</div>
+								<div class="meter-grid" aria-label="Operational readings">
+									<div class="meter-cell">
+										<span>Consumption</span>
+										<strong>Tenant Level</strong>
+									</div>
+									<div class="meter-cell">
+										<span>Fault Status</span>
+										<strong>Visible</strong>
+									</div>
+									<div class="meter-cell">
+										<span>Reports</span>
+										<strong>Monthly</strong>
+									</div>
+								</div>
+							</div>
+						</aside>
+					</div>
+				</section>
+
+				<section
+					id="how-it-works"
+					class="section dark flow-node"
+					aria-labelledby="works-title"
+				>
+					<div class="section-inner">
+						<div class="section-label">How It Works</div>
+						<h2 id="works-title" class="section-title">
+							From Meter Reading to Management Report
+						</h2>
+						<div class="process-flow">
+							<article class="process-step">
+								<div class="step-number">01</div>
+								<div>
+									<h3>Meters Installed</h3>
+									<p>
+										BTU metering points are structured around tenant cooling usage.
+									</p>
+								</div>
+							</article>
+							<article class="process-step">
+								<div class="step-number">02</div>
+								<div>
+									<h3>Data Collected</h3>
+									<p>
+										Readings are gathered through the property communication layer.
+									</p>
+								</div>
+							</article>
+							<article class="process-step">
+								<div class="step-number">03</div>
+								<div>
+									<h3>Invoices Generated</h3>
+									<p>
+										Validated consumption records support monthly tenant billing.
+									</p>
+								</div>
+							</article>
+							<article class="process-step">
+								<div class="step-number">04</div>
+								<div>
+									<h3>Reports Delivered</h3>
+									<p>
+										Property teams receive structured reporting for review and action.
+									</p>
+								</div>
+							</article>
+						</div>
+					</div>
+				</section>
+
+				<section
+					id="services"
+					class="section light flow-node"
+					aria-labelledby="features-title"
+				>
+					<div class="section-inner">
+						<div class="section-label">Features</div>
+						<h2 id="features-title" class="section-title">
+							Utility Operations Built Around Cooling Recovery
+						</h2>
+						<div class="feature-grid">
+							<article class="feature-card">
+								<h3>Tenant-Level BTU Metering</h3>
+								<p>
+									Designed to measure chilled water consumption at the tenant
+									boundary.
+								</p>
+							</article>
+							<article class="feature-card">
+								<h3>Automated Monthly Billing</h3>
+								<p>
+									Structured billing outputs support consistent monthly tenant
+									charge cycles.
+								</p>
+							</article>
+							<article class="feature-card">
+								<h3>Real-Time Monitoring Dashboard</h3>
+								<p>
+									Operational views support visibility into consumption, flow, and
+									system status.
+								</p>
+							</article>
+							<article class="feature-card">
+								<h3>Remote Valve Control</h3>
+								<p>
+									Designed for remote valve status visibility and controlled utility
+									operations.
+								</p>
+							</article>
+							<article class="feature-card">
+								<h3>Maintenance &amp; Technical Support</h3>
+								<p>
+									Structured for ongoing metering layer support and technical
+									follow-up.
+								</p>
+							</article>
+							<article class="feature-card">
+								<h3>Flexible Engagement Models</h3>
+								<p>
+									Designed to support operator, service-provider, or hybrid billing
+									structures.
+								</p>
+							</article>
+							<article class="feature-card">
+								<h3>Energy Optimisation Insights</h3>
+								<p>
+									Consumption and temperature data can support future operational
+									improvement insights.
+								</p>
+							</article>
+						</div>
+					</div>
+				</section>
+
+				<section class="section light flow-node" aria-labelledby="properties-title">
+					<div class="section-inner">
+						<div class="section-label">Built for Commercial Properties</div>
+						<h2 id="properties-title" class="section-title">
+							Structured for Tenant-Heavy Cooling Environments
+						</h2>
+						<div class="property-grid">
+							<article class="property-card">
+								<h3>Commercial Asset Fit</h3>
+								<p>
+									Designed for malls, mixed-use developments, and commercial
+									centres.
+								</p>
+							</article>
+							<article class="property-card">
+								<h3>Portfolio Scale</h3>
+								<p>
+									Scales from single-site assets to multi-building portfolios.
+								</p>
+							</article>
+							<article class="property-card">
+								<h3>Infrastructure Compatibility</h3>
+								<p>
+									Compatible with existing chilled water and HVAC infrastructure.
+								</p>
+							</article>
+							<article class="property-card">
+								<h3>Billing Structure Support</h3>
+								<p>
+									Supports operator, service-provider, or hybrid billing structures.
+								</p>
+							</article>
+						</div>
+					</div>
+				</section>
+
+				<section
+					id="platform"
+					class="section dark flow-node"
+					aria-labelledby="platform-title"
+				>
+					<div class="section-inner">
+						<div class="section-label">Platform Proof</div>
+						<h2 id="platform-title" class="section-title">
+							A Platform Built for Operators
+						</h2>
+						<p class="section-copy">
+							PAIR Utility Platform is presented as a working operational system
+							for metering visibility, billing action, and reporting output.
+						</p>
+						<div class="proof-grid">
+							<article class="proof-card">
+								<div class="proof-visual">Live Meter Monitoring</div>
+								<h3>Live Meter Monitoring</h3>
+								<p>
+									Structured views for tenant meters, consumption readings, and
+									operational status.
+								</p>
+							</article>
+							<article class="proof-card">
+								<div class="proof-visual">Generate Invoice</div>
+								<h3>Generate Invoice</h3>
+								<p>
+									Billing actions are organized around validated usage records and
+									monthly cycles.
+								</p>
+							</article>
+							<article class="proof-card">
+								<div class="proof-visual">PDF Invoice Output</div>
+								<h3>PDF Invoice Output</h3>
+								<p>
+									Reporting and invoice outputs are structured for property and
+									tenant review.
+								</p>
+							</article>
+						</div>
+						<p class="proof-caption">
+							PAIR Utility Platform - Operational System. Live demo assets can be
+							added once screenshots are exported.
+						</p>
+					</div>
+				</section>
+
+				<section class="section light flow-node" aria-labelledby="model-title">
+					<div class="section-inner section-grid">
+						<div>
+							<div class="section-label">The PAIR Operating Model</div>
+							<h2 id="model-title" class="section-title">
+								Operator Structure Beyond Installation
+							</h2>
+							<p class="section-copy">
+								PAIR is structured as a utility operator for the metering,
+								data, billing, and reporting layer. The model is designed to give
+								property teams long-term operational visibility rather than a
+								one-time equipment handover.
+							</p>
+							<p class="operating-note">
+								PAIR operates the metering, data, billing, and reporting layer.
+								The property retains chillers, HVAC plant, pumps, and electricity
+								supply.
+							</p>
+						</div>
+
+						<div class="comparison-table" aria-label="Contractor and PAIR operator comparison">
+							<div class="comparison-row">
+								<div class="comparison-head">Contractor</div>
+								<div class="comparison-cell">
+									<ul>
+										<li>Installs equipment</li>
+										<li>Hands over system</li>
+										<li>Limited ongoing visibility</li>
+									</ul>
+								</div>
+							</div>
+							<div class="comparison-row">
+								<div class="comparison-head">PAIR Operator</div>
+								<div class="comparison-cell">
+									<ul>
+										<li>Installs metering layer</li>
+										<li>Monitors data</li>
+										<li>Supports billing</li>
+										<li>Maintains reporting</li>
+										<li>Provides long-term operational structure</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+					</div>
+				</section>
+			</div>
+
+			<section id="contact" class="section dark" aria-labelledby="cta-title">
+				<div class="section-inner">
+					<div class="section-label">Project Assessment</div>
+					<h2 id="cta-title" class="section-title">Let's Assess Your Property</h2>
+					<p class="section-copy">
+						PAIR reviews meter locations, riser communication paths, tenant
+						billing requirements, and chilled water recovery potential.
+					</p>
+					<a class="cta" href="mailto:info@example.com">Request a Project Assessment</a>
+					<div class="footer-line">
+						<span>PAIR General Contracting LLC</span>
+						<span>Abu Dhabi, UAE</span>
+					</div>
+				</div>
+			</section>
+		</main>
 	</body>
 </html>
